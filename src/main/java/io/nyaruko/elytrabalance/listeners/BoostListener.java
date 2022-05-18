@@ -2,9 +2,9 @@ package io.nyaruko.elytrabalance.listeners;
 
 import io.nyaruko.elytrabalance.ElytraBalance;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
+import org.bukkit.event.Event;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -18,37 +18,28 @@ import org.bukkit.inventory.meta.FireworkMeta;
 import org.bukkit.inventory.meta.ItemMeta;
 
 public class BoostListener implements Listener {
-    /**
-     * Listener for elytra boost events (playerDamageOnNoStarRocketUse)
-     * Player damage amounts defined with additionalDamagePerStarRocketUse & damagePerNoStarRocketUse
-     * Elytra ItemStack damage defined with itemDamageOnRocketUse
-     */
     @EventHandler(priority = EventPriority.NORMAL)
     public void onBoost(PlayerInteractEvent event) {
-        Player p = event.getPlayer();
+        Player player = event.getPlayer();
         ItemStack heldItem = event.getItem();
-        if(!p.isGliding() || heldItem == null || event.getAction() != Action.RIGHT_CLICK_AIR || heldItem.getType() != Material.FIREWORK_ROCKET) return;
-
-        //Should deal player damage checks
-        if(!p.hasPermission("elytrabalance.overrides.boostplayerdamage")) {
-            if(((FireworkMeta) heldItem.getItemMeta()).hasEffects()) {
-                p.damage(ElytraBalance.getConfigModel().additionalDamagePerStarRocketUse);
-            } else if(ElytraBalance.getConfigModel().playerDamageOnNoStarRocketUse) {
-                p.damage(ElytraBalance.getConfigModel().damagePerNoStarRocketUse);
+        if (!player.isGliding() || heldItem == null || event.getAction() != Action.RIGHT_CLICK_AIR || heldItem.getType() != Material.FIREWORK_ROCKET)
+            return;
+        if (!player.hasPermission("elytrabalance.overrides.boostplayerdamage"))
+            if (((FireworkMeta)heldItem.getItemMeta()).hasEffects()) {
+                player.damage((ElytraBalance.getConfigModel()).additionalDamagePerStarRocketUse);
+            } else if ((ElytraBalance.getConfigModel()).playerDamageOnNoStarRocketUse) {
+                player.damage((ElytraBalance.getConfigModel()).damagePerNoStarRocketUse);
             }
-        }
-
-        //Should damage elytra checks
-        if(!p.hasPermission("elytrabalance.overrides.itemdamage")) {
-            ItemStack elytra = p.getInventory().getChestplate();
-            if(elytra != null) {
-                Damageable m = (Damageable) elytra.getItemMeta();
-                if(m != null) {
-                    int durability = m.getDamage() + ElytraBalance.getConfigModel().itemDamageOnRocketUse;
-                    durability = Math.min(durability, 432);
-                    m.setDamage(durability);
-                    elytra.setItemMeta((ItemMeta) m);
-                    Bukkit.getServer().getPluginManager().callEvent(new PlayerItemDamageEvent(p, elytra, ElytraBalance.getConfigModel().itemDamageOnRocketUse));
+        if (!player.hasPermission("elytrabalance.overrides.itemdamage")) {
+            ItemStack elytra = player.getInventory().getChestplate();
+            if (elytra != null) {
+                Damageable elytraMeta = (Damageable)elytra.getItemMeta();
+                if (elytraMeta != null) {
+                    int durability = elytraMeta.getDamage() + (ElytraBalance.getConfigModel()).elytraDamageOnRocketUse;
+                    durability = Math.min(durability, elytra.getType().getMaxDurability());
+                    elytraMeta.setDamage(durability);
+                    elytra.setItemMeta((ItemMeta)elytraMeta);
+                    Bukkit.getServer().getPluginManager().callEvent((Event)new PlayerItemDamageEvent(player, elytra, (ElytraBalance.getConfigModel()).elytraDamageOnRocketUse));
                 }
             }
         }
@@ -56,12 +47,36 @@ public class BoostListener implements Listener {
 
     @EventHandler
     public void onRipTide(PlayerRiptideEvent event) {
-        final Player player = event.getPlayer();
+        Player player = event.getPlayer();
         ItemStack elytra = player.getInventory().getChestplate();
-        if(elytra != null && elytra.getType() == Material.ELYTRA && player.isGliding() && ElytraBalance.getConfigModel().riptideInterruptsGliding && !player.hasPermission("elytrabalance.overrides.riptide")) {
-            player.setGliding(false);
-            if(ElytraBalance.getConfigModel().showRiptideInterruptMessage)
-                ElytraBalance.sendConfigMessage(player, ElytraBalance.getConfigModel().riptideInterruptMessage);
+        if (elytra != null && elytra.getType() == Material.ELYTRA && !player.hasPermission("elytrabalance.overrides.riptide")) {
+            if ((ElytraBalance.getConfigModel()).elytraDamageOnRiptideUseWithElytra > 0) {
+                Damageable elytraMeta = (Damageable)elytra.getItemMeta();
+                if (elytraMeta != null) {
+                    int durability = elytraMeta.getDamage() + (ElytraBalance.getConfigModel()).elytraDamageOnRiptideUseWithElytra;
+                    durability = Math.min(durability, elytra.getType().getMaxDurability());
+                    elytraMeta.setDamage(durability);
+                    elytra.setItemMeta((ItemMeta)elytraMeta);
+                    Bukkit.getServer().getPluginManager().callEvent((Event)new PlayerItemDamageEvent(player, elytra, (ElytraBalance.getConfigModel()).elytraDamageOnRiptideUseWithElytra));
+                    String elytraDamagedMSG = (ElytraBalance.getConfigModel()).riptideDamagedElytraMessage;
+                    if (!elytraDamagedMSG.isEmpty())
+                        ElytraBalance.sendConfigMessage(player, elytraDamagedMSG);
+                }
+            }
+            if ((ElytraBalance.getConfigModel()).tridentDamageOnRiptideUseWithElytra > 0) {
+                ItemStack trident = event.getItem();
+                Damageable tridentMeta = (Damageable)trident.getItemMeta();
+                if (tridentMeta != null) {
+                    int durability = tridentMeta.getDamage() + (ElytraBalance.getConfigModel()).tridentDamageOnRiptideUseWithElytra;
+                    durability = Math.min(durability, trident.getType().getMaxDurability());
+                    tridentMeta.setDamage(durability);
+                    trident.setItemMeta((ItemMeta)tridentMeta);
+                    Bukkit.getServer().getPluginManager().callEvent((Event)new PlayerItemDamageEvent(player, trident, (ElytraBalance.getConfigModel()).tridentDamageOnRiptideUseWithElytra));
+                    String tridentDamageMSG = (ElytraBalance.getConfigModel()).riptideDamagedTrident;
+                    if (!tridentDamageMSG.isEmpty())
+                        ElytraBalance.sendConfigMessage(player, tridentDamageMSG);
+                }
+            }
         }
     }
 }

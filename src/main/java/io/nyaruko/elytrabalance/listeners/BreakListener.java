@@ -12,24 +12,20 @@ import org.bukkit.inventory.meta.Damageable;
 import org.bukkit.inventory.meta.ItemMeta;
 
 public class BreakListener implements Listener {
-    /**
-     * Remove on break listener (removeElytraOnBreak)
-     */
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onBreak(PlayerItemDamageEvent event) {
         Player p = event.getPlayer();
         ItemStack is = p.getInventory().getChestplate();
         ItemMeta im;
-
-        if(is == null || (im = is.getItemMeta()) == null) return;
-
-        int durability = ((Damageable) im).getDamage();
-        if(is.getType() == Material.ELYTRA && !p.hasPermission("elytrabalance.overrides.breakremoval") && durability >= 430) {
+        if (is == null || (im = is.getItemMeta()) == null)
+            return;
+        int durability = ((Damageable)im).getDamage();
+        if (is.getType() == Material.ELYTRA && !p.hasPermission("elytrabalance.overrides.breakremoval") && durability >= 430) {
             p.getInventory().setChestplate(new ItemStack(Material.AIR));
             event.setCancelled(true);
-
-            if(ElytraBalance.getConfigModel().showElytraDestroyedAndRemovedMessage)
-                ElytraBalance.sendConfigMessage(event.getPlayer(), ElytraBalance.getConfigModel().elytraDestroyedAndRemovedMessage);
+            String elytraDestroyedAndRemoved = (ElytraBalance.getConfigModel()).elytraDestroyedAndRemovedMessage;
+            if (!elytraDestroyedAndRemoved.isEmpty())
+                ElytraBalance.sendConfigMessage(p, elytraDestroyedAndRemoved);
         }
     }
 }

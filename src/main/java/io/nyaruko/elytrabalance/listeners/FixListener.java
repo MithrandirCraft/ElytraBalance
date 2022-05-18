@@ -11,35 +11,28 @@ import org.bukkit.event.player.PlayerItemMendEvent;
 import org.bukkit.inventory.ItemStack;
 
 public class FixListener implements Listener {
-    /**
-     * Listener for anvil repairs (canRepairElytra)
-     */
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onFix(PrepareAnvilEvent event) {
-        Player p = (Player) event.getView().getPlayer();
-        ItemStack rightSide = event.getInventory().getContents()[1];//Right hand slot of anvil
+        Player p = (Player)event.getView().getPlayer();
+        ItemStack rightSide = event.getInventory().getContents()[1];
+        if (event.getResult() != null && event
+                .getResult().getType() == Material.ELYTRA && rightSide != null && rightSide
 
-        if (event.getResult() != null &&
-            event.getResult().getType() == Material.ELYTRA &&
-            rightSide != null &&
-            rightSide.getType() == Material.PHANTOM_MEMBRANE && //Allows users to still enchant elytras
-            !ElytraBalance.getConfigModel().canRepairElytra &&
-            !p.hasPermission("elytrabalance.overrides.fix")) {
+                .getType() == Material.PHANTOM_MEMBRANE &&
+                !(ElytraBalance.getConfigModel()).canRepairElytra &&
+                !p.hasPermission("elytrabalance.overrides.fix")) {
             event.setResult(null);
             p.updateInventory();
-            if(ElytraBalance.getConfigModel().showRepairAttemptBlockedMessage)
-                ElytraBalance.sendConfigMessage(p, ElytraBalance.getConfigModel().repairAttemptBlockedMessage);
+            String repairAttemptBlocked = (ElytraBalance.getConfigModel()).repairAttemptBlockedMessage;
+            if (!repairAttemptBlocked.isEmpty())
+                ElytraBalance.sendConfigMessage(p, repairAttemptBlocked);
         }
     }
 
-    /**
-     * Listener for mend enchantment repairs (canMendElytra)
-     */
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onFix(PlayerItemMendEvent event) {
         Player p = event.getPlayer();
-        if(event.getItem().getType() == Material.ELYTRA && !ElytraBalance.getConfigModel().canMendElytra && !p.hasPermission("elytrabalance.overrides.mend")){
+        if (event.getItem().getType() == Material.ELYTRA && !(ElytraBalance.getConfigModel()).canMendElytra && !p.hasPermission("elytrabalance.overrides.mend"))
             event.setRepairAmount(0);
-        }
     }
 }
